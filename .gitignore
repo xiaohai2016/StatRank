@@ -1,0 +1,7 @@
+resources/
+.DS_Store
+.vscode
+__pycache__/
+log.txt
+log_back.txt
+test.csv
