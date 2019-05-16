@@ -34,6 +34,10 @@ def main(opts):
   list_mle_mq2008_training = training.MQ200XTrainer(use_mq2007=False)
   list_mle_mq2008_training.train(criteria.ListMLECriterion())
 
+  # print("=====StatRank  MQ2007=======")
+  # list_mle_mq2007_training = training.MQ200XTrainer(use_mq2007=True)
+  # list_mle_mq2007_training.train(criteria.StatRankCriterion())
+
   sys.stdout = sys.__stdout__
 
 if __name__ == "__main__":
