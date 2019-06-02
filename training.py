@@ -195,7 +195,7 @@ class MQ200XTrainer(BaseTrainer):
     ndcg_ks_list = []
     err_ks_list = []
     for fold in range(1, 6):
-      print(f"Folder {fold}")
+      print(f"Fold {fold}")
 
       full_model = models.SimpleOneLayerLinear(self.feature_count)
       optimizer = optim.Adam(

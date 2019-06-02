@@ -124,23 +124,48 @@ class StatRankCriterion(nn.Module):
   Implementation of the StatRank algorithm
 """
 
+  def __init__(self, max_label_val=2):
+    super(StatRankCriterion, self).__init__()
+    self.max_label_val = max_label_val
+
   def forward(self, *inputs):
     """
     The main forward method.
     """
     predictions = inputs[0]
     labels = inputs[1]
+
     # BUGBUG, for batch size larger than 1, we need to passing
     # in a mask based on the input data to compute samples
     mask = torch.zeros(labels.shape, dtype=torch.int32) + 1.0
     n_samples = torch.sum(mask, dim=-1)
 
-    prediction_mean = torch.mean(predictions, dim=-1, keepdim=True)
-    predition_var = torch.var(predictions, dim=-1, keepdim=True)
-    prediction_normalized = (predictions - prediction_mean) / torch.sqrt(predition_var)
-    predicted_pos = CDFNormalN.apply(prediction_normalized, n_samples)
+    # For each label value, estimate its empirical mean, variance and count
+    count_s = []
+    predicted_pos_s = []
+    for label_idx in range(self.max_label_val + 1):
+      selection_index = (labels == label_idx).nonzero()
+      idx_count = len(selection_index)
+      if idx_count == 0:
+        continue
+      selection_predictions = torch.stack(
+        [predictions[idx1][idx2] for (idx1, idx2) in selection_index])
+      count_s.append(idx_count)
+      selection_mean = torch.mean(selection_predictions, dim=-1, keepdim=True)
+      selection_var = torch.var(selection_predictions, dim=-1, keepdim=True, unbiased=False)
+      prediction_normalized = (predictions - selection_mean) / (torch.sqrt(selection_var) + 1.0e-6)
+      predicted_pos = CDFNormalN.apply(-prediction_normalized, n_samples)
+      predicted_pos_s.append(predicted_pos)
+
+    final_predicted_pos = torch.zeros_like(predicted_pos_s[0])
+    total_count = 0.0
+    for count, predicted_pos in zip(count_s, predicted_pos_s):
+      final_predicted_pos += count * predicted_pos
+      total_count += count
+    final_predicted_pos /= total_count
+
     rel_val = torch.pow(2.0, labels) - 1.0
-    return torch.sum(rel_val / torch.log2(1.0 + predicted_pos), dim=-1)
+    return -torch.sum(rel_val / torch.log2(1.0 + final_predicted_pos), dim=-1)
 
 class NDCGFunctional(torch.autograd.Function):
   '''
