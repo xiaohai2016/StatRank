@@ -24,6 +24,26 @@ class ListNetTopOneCriterion(nn.Module):
     labels = inputs[1]
     return torch.sum(-torch.sum(F.log_softmax(out, dim=1) * F.softmax(labels, dim=1), dim=1))
 
+class KLDivergenceTopOneCriterion(nn.Module):
+  """
+  Implementation of the ListNet algorithm:
+  Learning to Rank: From Pairwise Approach to Listwise Approach.
+  In Proceedings of the 24th ICML. 129–136.
+  """
+
+  def forward(self, *inputs):
+    """
+    The main forward method.
+    We here use the Top-1 approximated ListNet loss,
+    which reduces to a softmax and simple cross entropy.
+    """
+    out = inputs[0]
+    labels = inputs[1]
+    return torch.sum(
+            torch.sum(F.softmax(out, dim=1) *
+                      (F.log_softmax(out, dim=1) - F.log_softmax(labels, dim=1)), dim=1)
+            )
+
 class LogCumsumExp(torch.autograd.Function):
   '''
   The PyTorch OP corresponding to the operation: log{ |sum_k^m{ exp{pred_k} } }

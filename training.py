@@ -48,6 +48,34 @@ def run_epoch(batch_iter, full_model, loss_compute, log_interval=50):
       samples = 0
   return total_loss / total_samples
 
+
+def dump_metrics(k_vals, ndcg_ks_list, err_ks_list, column_head='Fold'):
+  """Format nDCG and ERR metrics and dump on the stdout"""
+  if ndcg_ks_list:
+    print("")
+    print("".join([f"{column_head},\t"] + 
+                  ['NDCG@' + str(k) + ',' + (' ' if k < 10 else '') for k in k_vals]))
+    for idx, ndcg_ks in enumerate(ndcg_ks_list):
+      print(",\t".join([str(idx + 1)] + ["{:.4f}".format(score) for score in ndcg_ks]))
+    np_ndcg_ks_list = np.asarray(ndcg_ks_list, dtype=np.float64)
+    ndcg_ks_average = np.mean(np_ndcg_ks_list, axis=0)
+    ndcg_ks_std = np.std(np_ndcg_ks_list, axis=0)
+    print(",\t".join(['AVG'] + ["{:.4f}".format(score) for score in ndcg_ks_average.tolist()]))
+    print(",\t".join(['STD'] + ["{:.4f}".format(score) for score in ndcg_ks_std.tolist()]))
+
+  if err_ks_list:
+    print("")
+    print(",\t".join([f"{column_head}"] + ['ERR@' + str(k) for k in k_vals]))
+    for idx, err_ks in enumerate(err_ks_list):
+      print(",\t".join([str(idx + 1)] + ["{:.4f}".format(score) for score in err_ks]))
+    np_err_ks_list = np.asarray(err_ks_list, dtype=np.float64)
+    err_ks_average = np.mean(np_err_ks_list, axis=0)
+    err_ks_std = np.std(np_err_ks_list, axis=0)
+    print(",\t".join(['AVG'] + ["{:.4f}".format(score) for score in err_ks_average.tolist()]))
+    print(",\t".join(['STD'] + ["{:.4f}".format(score) for score in err_ks_std.tolist()]))
+
+  return k_vals, ndcg_ks_average, err_ks_average
+
 class SimpleLossCompute:
   """
   A simple loss compute function that drives training.
@@ -148,27 +176,6 @@ class BaseTrainer(object):
         sample_count += 1
     return [x / sample_count for x in sum_ndcg_at_k], [x / sample_count for x in sum_err_at_k]
 
-def dump_metrics(k_vals, ndcg_ks_list, err_ks_list):
-  """Format nDCG and ERR metrics and dump on the stdout"""
-  if ndcg_ks_list:
-    print("")
-    print(",\t".join(['Fold'] + ['NDCG@' + str(k) for k in k_vals]))
-    sum_ndcg_ks = np.zeros((len(k_vals)), dtype=np.float64)
-    for idx, ndcg_ks in enumerate(ndcg_ks_list):
-      print(",\t".join([str(idx + 1)] + ["{:.4f}".format(score) for score in ndcg_ks]))
-      sum_ndcg_ks = np.add(sum_ndcg_ks, np.asarray(ndcg_ks, dtype=np.float64))
-    ndcg_ks_average = np.divide(sum_ndcg_ks, 5)
-    print(",\t".join(['AVG'] + ["{:.4f}".format(score) for score in ndcg_ks_average.tolist()]))
-
-  if err_ks_list:
-    print("")
-    print(",\t".join(['Fold'] + ['ERR@' + str(k) for k in k_vals]))
-    sum_err_ks = np.zeros((len(k_vals)), dtype=np.float64)
-    for idx, err_ks in enumerate(err_ks_list):
-      print(",\t".join([str(idx + 1)] + ["{:.4f}".format(score) for score in err_ks]))
-      sum_err_ks = np.add(sum_err_ks, np.asarray(err_ks, dtype=np.float64))
-    err_ks_average = np.divide(sum_err_ks, 5)
-    print(",\t".join(['AVG'] + ["{:.4f}".format(score) for score in err_ks_average.tolist()]))
 
 class MQ200XTrainer(BaseTrainer):
   """
@@ -221,4 +228,4 @@ class MQ200XTrainer(BaseTrainer):
         log_interval=log_interval)
       ndcg_ks_list.append(ndcg_ks)
       err_ks_list.append(err_ks)
-    dump_metrics(k_vals, ndcg_ks_list, err_ks_list)
+    return dump_metrics(k_vals, ndcg_ks_list, err_ks_list)
