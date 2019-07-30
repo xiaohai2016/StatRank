@@ -39,17 +39,35 @@ def main(opts):
   # list_net_mq2008_training = training.MQ200XTrainer(use_mq2007=False)
   # list_net_mq2008_training.train(criteria.ListNetTopOneCriterion())
 
-  print("=====KLDivergence  MQ2007=======")
-  kl_ndcgs = []
-  kl_errs = []
-  kl_ks = None
-  for _ in range(opts.repeat):
-    list_net_mq2007_training = training.MQ200XTrainer(use_mq2007=True)
-    kl_ks, ndcg, err = list_net_mq2007_training.train(criteria.KLDivergenceTopOneCriterion())
-    kl_ndcgs.append(ndcg)
-    kl_errs.append(err)
-  print(f"======KLDivergence MQ2007 metrics average of [{opts.repeat}] runs======")
-  training.dump_metrics(kl_ks, kl_ndcgs, kl_errs, column_head='Try')
+  # print("=====KLDivergence  MQ2007=======")
+  # kl_ndcgs = []
+  # kl_errs = []
+  # kl_ks = None
+  # for _ in range(opts.repeat):
+  #   kl_divergence_mq2007_training = training.MQ200XTrainer(use_mq2007=True)
+  #   kl_ks, ndcg, err = kl_divergence_mq2007_training.train(criteria.KLDivergenceTopOneCriterion())
+  #   kl_ndcgs.append(ndcg)
+  #   kl_errs.append(err)
+  # print(f"======KLDivergence MQ2007 metrics average of [{opts.repeat}] runs======")
+  # training.dump_metrics(kl_ks, kl_ndcgs, kl_errs, column_head='Try')
+
+  print("=====Alpha Divergence  MQ2007=======")
+  alpha_ndcgs = {}
+  alpha_errs = {}
+  alpha_vals = [-5.0, -2.0, -1.0, -0.5, 0.5, 1.5, 2.0, 5.0]
+  for alpha in alpha_vals:
+    alpha_ndcgs[alpha] = []
+    alpha_errs[alpha] = []
+    alpha_ks = None
+    for _ in range(opts.repeat):
+      alpha_divergence_mq2007_training = training.MQ200XTrainer(use_mq2007=True)
+      alpha_ks, ndcg, err = alpha_divergence_mq2007_training.train(
+        criteria.AlphaDivergenceTopOneCriterion(alpha=alpha))
+      alpha_ndcgs[alpha].append(ndcg)
+      alpha_errs[alpha].append(err)
+  for alpha in alpha_vals:
+    print(f"======Alpha[{alpha}] Divergence MQ2007 [{opts.repeat}] runs======")
+    training.dump_metrics(alpha_ks, alpha_ndcgs[alpha], alpha_errs[alpha], column_head='Try')
 
   # print("=====ListMLE  MQ2007=======")
   # list_mle_mq2007_training = training.MQ200XTrainer(use_mq2007=True)

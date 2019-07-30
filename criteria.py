@@ -26,9 +26,7 @@ class ListNetTopOneCriterion(nn.Module):
 
 class KLDivergenceTopOneCriterion(nn.Module):
   """
-  Implementation of the ListNet algorithm:
-  Learning to Rank: From Pairwise Approach to Listwise Approach.
-  In Proceedings of the 24th ICML. 129–136.
+  Implementation of the KL divergence algorithm for top 1 probabilities
   """
 
   def forward(self, *inputs):
@@ -43,6 +41,41 @@ class KLDivergenceTopOneCriterion(nn.Module):
             torch.sum(F.softmax(out, dim=1) *
                       (F.log_softmax(out, dim=1) - F.log_softmax(labels, dim=1)), dim=1)
             )
+
+class AlphaDivergenceTopOneCriterion(nn.Module):
+  """
+  Implementation of the Alpha divergence algorithm for top 1 probabilities
+  """
+
+  def __init__(self, alpha=0.0):
+    super(AlphaDivergenceTopOneCriterion, self).__init__()
+    threshold = 1.0e-5
+    self.alpha = alpha
+    self.is_kl_divergence = True if (abs(alpha - 1.0) < threshold) else False
+    self.is_cross_entropy = True if abs(alpha) < threshold else False
+
+  def forward(self, *inputs):
+    """
+    The main forward method.
+    We here use the Top-1 approximated ListNet loss,
+    which reduces to a softmax and simple cross entropy.
+    """
+    out = inputs[0]
+    labels = inputs[1]
+    if self.is_kl_divergence:
+      return torch.sum(
+        torch.sum(F.softmax(out, dim=1) *
+                  (F.log_softmax(out, dim=1) - F.log_softmax(labels, dim=1)), dim=1))
+    elif self.is_cross_entropy:
+      return torch.sum(-torch.sum(F.log_softmax(out, dim=1) * F.softmax(labels, dim=1), dim=1))
+    else:
+      p = F.softmax(out, dim=1) # pylint: disable=invalid-name
+      q = F.softmax(labels, dim=1) # pylint: disable=invalid-name
+      alpha = self.alpha
+      alpha_c = 1.0 - alpha
+      val = alpha * p + alpha_c * q - torch.pow(p, alpha) * torch.pow(q, alpha_c)
+      val = val / alpha / alpha_c
+      return torch.sum(torch.sum(val, dim=1))
 
 class LogCumsumExp(torch.autograd.Function):
   '''
