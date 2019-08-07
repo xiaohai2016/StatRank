@@ -16,6 +16,9 @@ def parse_args():
   parser.add_argument('--data-set',
                       help='the dataset to train on',
                       choices=('mq2007', 'mq2008'), default='mq2007')
+  parser.add_argument('--all-objectives',
+                      help='To run training with all objective functions',
+                      action="store_true", default=False)
   parser.add_argument('--listnet',
                       help='To run training with listnet cross-entropy divergence',
                       action="store_true", default=False)
@@ -31,6 +34,12 @@ def parse_args():
   return parser.parse_args()
 
 def main(opts):
+  if opts.all_objectives:
+    opts.listnet = True
+    opts.kl_divergence = True
+    opts.alpha_divergence = True
+    opts.weighted_kl_divergence = True
+
   """The main function"""
   listnet_mq2007_ndcgs = []
   listnet_mq2007_errs = []
@@ -78,7 +87,7 @@ def main(opts):
 
   alpha_mq2007_ndcgs = {}
   alpha_mq2007_errs = {}
-  alpha_mq2007_vals = [-5.0, -2.0, -1.0, -0.5, 0.5, 1.5, 2.0, 5.0]
+  alpha_mq2007_vals = [-0.5, 0.5, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0, 5.0]
   if opts.alpha_divergence and opts.data_set == 'mq2007':
     for alpha in alpha_mq2007_vals:
       alpha_mq2007_ndcgs[alpha] = []
@@ -94,7 +103,7 @@ def main(opts):
 
   alpha_mq2008_ndcgs = {}
   alpha_mq2008_errs = {}
-  alpha_mq2008_vals = [-5.0, -2.0, -1.0, -0.5, 0.5, 1.5, 2.0, 5.0]
+  alpha_mq2008_vals = [-0.5, 0.5, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0, 5.0]
   if opts.alpha_divergence and opts.data_set == 'mq2008':
     for alpha in alpha_mq2008_vals:
       alpha_mq2008_ndcgs[alpha] = []
@@ -110,7 +119,7 @@ def main(opts):
 
   lambda_mq2007_ndcgs = {}
   lambda_mq2007_errs = {}
-  lambda_mq2007_vals = [0.1, 0.7, 0.9, 1.1, 1.3, 2.0, 5.0]
+  lambda_mq2007_vals = [0.1, 0.7, 1.4, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0]
   if opts.weighted_kl_divergence and opts.data_set == 'mq2007':
     for lambd in lambda_mq2007_vals:
       lambda_mq2007_ndcgs[lambd] = []
@@ -126,7 +135,7 @@ def main(opts):
 
   lambda_mq2008_ndcgs = {}
   lambda_mq2008_errs = {}
-  lambda_mq2008_vals = [0.1, 0.7, 0.9, 1.1, 1.3, 2.0, 5.0]
+  lambda_mq2008_vals = [0.1, 0.7, 1.4, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0]
   if opts.weighted_kl_divergence and opts.data_set == 'mq2008':
     for lambd in lambda_mq2008_vals:
       lambda_mq2008_ndcgs[lambd] = []
@@ -151,35 +160,74 @@ def main(opts):
   # list_mle_mq2007_training = training.MQ200XTrainer(use_mq2007=True)
   # list_mle_mq2007_training.train(criteria.StatRankCriterion())
 
+  ndcgs_list = []
+  errs_list = []
+  name_list = []
+  k_vals = []
   if opts.listnet and opts.data_set == 'mq2007':
     print(f"======ListNet MQ2007 metrics average of [{opts.repeat}] runs======")
-    training.dump_metrics(listnet_mq2007_ks, listnet_mq2007_ndcgs, listnet_mq2007_errs, column_head='Try')
+    k_vals, listnet_ndcgs, listnet_errs = training.dump_metrics(listnet_mq2007_ks, listnet_mq2007_ndcgs, listnet_mq2007_errs, column_head='Try')
+    name_list.append('ListNet')
+    ndcgs_list.append(listnet_ndcgs)
+    errs_list.append(listnet_errs)
   if opts.kl_divergence and opts.data_set == 'mq2007':
     print(f"======KLDivergence MQ2007 metrics average of [{opts.repeat}] runs======")
-    training.dump_metrics(kl_mq2007_ks, kl_mq2007_ndcgs, kl_mq2007_errs, column_head='Try')
+    _, kl_ndcgs, kl_errs = training.dump_metrics(kl_mq2007_ks, kl_mq2007_ndcgs, kl_mq2007_errs, column_head='Try')
+    name_list.append('KLDiv')
+    ndcgs_list.append(kl_ndcgs)
+    errs_list.append(kl_errs)
   if opts.alpha_divergence and opts.data_set == 'mq2007':
     for alpha in alpha_mq2007_vals:
       print(f"======Alpha[{alpha}] Divergence MQ2007 [{opts.repeat}] runs======")
-      training.dump_metrics(alpha_ks, alpha_mq2007_ndcgs[alpha], alpha_mq2007_errs[alpha], column_head='Try')
+      _, alpha_div_ndcgs, alpha_div_errs = training.dump_metrics(alpha_ks, alpha_mq2007_ndcgs[alpha], alpha_mq2007_errs[alpha], column_head='Try')
+      name_list.append(f"Alph{alpha:.1f}")
+      ndcgs_list.append(alpha_div_ndcgs)
+      errs_list.append(alpha_div_errs)
   if opts.weighted_kl_divergence and opts.data_set == 'mq2007':
     for lambd in lambda_mq2007_vals:
       print(f"======Lambda[{lambd}] KL Divergence MQ2007 [{opts.repeat}] runs======")
-      training.dump_metrics(lambda_ks, lambda_mq2007_ndcgs[lambd], lambda_mq2007_errs[lambd], column_head='Try')
+      _, weighted_kl_ndcgs, weighted_kl_errs = training.dump_metrics(lambda_ks, lambda_mq2007_ndcgs[lambd], lambda_mq2007_errs[lambd], column_head='Try')
+      name_list.append(f"Wgt{lambd:.1f}")
+      ndcgs_list.append(weighted_kl_ndcgs)
+      errs_list.append(weighted_kl_errs)
 
   if opts.listnet and opts.data_set == 'mq2008':
     print(f"======ListNet MQ2008 metrics average of [{opts.repeat}] runs======")
-    training.dump_metrics(listnet_mq2008_ks, listnet_mq2008_ndcgs, listnet_mq2008_errs, column_head='Try')
+    _, listnet_ndcgs, listnet_errs = training.dump_metrics(listnet_mq2008_ks, listnet_mq2008_ndcgs, listnet_mq2008_errs, column_head='Try')
+    name_list.append('ListNet')
+    ndcgs_list.append(listnet_ndcgs)
+    errs_list.append(listnet_errs)
   if opts.kl_divergence and opts.data_set == 'mq2008':
     print(f"======KLDivergence MQ2007 metrics average of [{opts.repeat}] runs======")
-    training.dump_metrics(kl_mq2008_ks, kl_mq2008_ndcgs, kl_mq2008_errs, column_head='Try')
+    _, kl_ndcgs, kl_errs = training.dump_metrics(kl_mq2008_ks, kl_mq2008_ndcgs, kl_mq2008_errs, column_head='Try')
+    name_list.append('KLDiv')
+    ndcgs_list.append(kl_ndcgs)
+    errs_list.append(kl_errs)
   if opts.alpha_divergence and opts.data_set == 'mq2008':
     for alpha in alpha_mq2008_vals:
       print(f"======Alpha[{alpha}] Divergence MQ2008 [{opts.repeat}] runs======")
-      training.dump_metrics(alpha_ks, alpha_mq2008_ndcgs[alpha], alpha_mq2008_errs[alpha], column_head='Try')
+      _, alpha_div_ndcgs, alpha_div_errs = training.dump_metrics(alpha_ks, alpha_mq2008_ndcgs[alpha], alpha_mq2008_errs[alpha], column_head='Try')
+      name_list.append(f"Alph{alpha:.1f}")
+      ndcgs_list.append(alpha_div_ndcgs)
+      errs_list.append(alpha_div_errs)
   if opts.weighted_kl_divergence and opts.data_set == 'mq2008':
     for lambd in lambda_mq2008_vals:
       print(f"======Lambda[{lambd}] KL Divergence MQ2008 [{opts.repeat}] runs======")
-      training.dump_metrics(lambda_ks, lambda_mq2008_ndcgs[lambd], lambda_mq2008_errs[lambd], column_head='Try')
+      _, weighted_kl_ndcgs, weighted_kl_errs = training.dump_metrics(lambda_ks, lambda_mq2008_ndcgs[lambd], lambda_mq2008_errs[lambd], column_head='Try')
+      name_list.append(f"Wgt{lambd:.1f}")
+      ndcgs_list.append(weighted_kl_ndcgs)
+      errs_list.append(weighted_kl_errs)
+
+  print(f"==========Dataset {opts.data_set.uppper()} NDCGs===========")
+  print("".join([f"Func,\t"] +
+                ['NDCG@' + str(k) + ',' + (' ' if k < 10 else '') for k in k_vals]))
+  for idx, ndcgs in enumerate(ndcgs_list):
+    print(",\t".join([str(idx + 1)] + ["{:.4f}".format(score) for score in ndcgs]))
+  print(f"==========Dataset {opts.data_set.uppper()} ERRs ===========")
+  print("".join([f"Func,\t"] +
+                ['ERR@' + str(k) + ',' + (' ' if k < 10 else '') for k in k_vals]))
+  for idx, errs in enumerate(errs_list):
+    print(",\t".join([str(idx + 1)] + ["{:.4f}".format(score) for score in errs]))
 
 if __name__ == "__main__":
   OPTS = parse_args()
