@@ -1,7 +1,6 @@
 """
 Neural network training utilities
 """
-import time
 import copy
 import operator
 import numpy as np
@@ -30,7 +29,7 @@ def run_epoch(batch_iter, full_model, loss_compute, log_interval=50):
   total_loss = 0
   samples = 0
   total_samples = 0
-  start = time.time()
+  #start = time.time()
   for i, batch in enumerate(batch_iter):
     # BUGBUG: fake batching
     labels = batch[1]
@@ -41,10 +40,10 @@ def run_epoch(batch_iter, full_model, loss_compute, log_interval=50):
     total_samples += 1
     samples += 1
     if i % log_interval == 0:
-      elapsed = time.time() - start
+      #elapsed = time.time() - start
       #print("Epoch Step: %d Loss: %f Samples per Sec: %f" % \
       #        (i, loss / features.size()[0], samples / elapsed))
-      start = time.time()
+      #start = time.time()
       samples = 0
   return total_loss / total_samples
 
@@ -53,7 +52,7 @@ def dump_metrics(k_vals, ndcg_ks_list, err_ks_list, column_head='Fold'):
   """Format nDCG and ERR metrics and dump on the stdout"""
   if ndcg_ks_list:
     print("")
-    print("".join([f"{column_head},\t"] + 
+    print("".join([f"{column_head},\t"] +
                   ['NDCG@' + str(k) + ',' + (' ' if k < 10 else '') for k in k_vals]))
     for idx, ndcg_ks in enumerate(ndcg_ks_list):
       print(",\t".join([str(idx + 1)] + ["{:.4f}".format(score) for score in ndcg_ks]))
