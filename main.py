@@ -2,6 +2,8 @@
 The main entry point - handles command line options and invocations
 """
 import argparse
+import numpy as np
+import torch
 import training
 import criteria
 
@@ -40,6 +42,12 @@ def main(opts):
     opts.kl_divergence = True
     opts.alpha_divergence = True
     opts.weighted_kl_divergence = True
+
+  # Seed for reproducibility
+  torch.manual_seed(2019)
+  np.random.seed(2019)
+  torch.backends.cudnn.deterministic = True
+  torch.backends.cudnn.benchmark = False
 
   listnet_mq2007_ndcgs = []
   listnet_mq2007_errs = []
@@ -172,7 +180,7 @@ def main(opts):
     print(f"======ListNet MQ2007 metrics average of [{opts.repeat}] runs======")
     k_vals, listnet_ndcgs, listnet_errs = training.dump_metrics(
       listnet_mq2007_ks, listnet_mq2007_ndcgs, listnet_mq2007_errs, column_head='Try')
-    name_list.append('ListNet')
+    name_list.append('ListN')
     ndcgs_list.append(listnet_ndcgs)
     errs_list.append(listnet_errs)
   if opts.kl_divergence and opts.data_set == 'mq2007':
@@ -231,16 +239,16 @@ def main(opts):
       ndcgs_list.append(weighted_kl_ndcgs)
       errs_list.append(weighted_kl_errs)
 
-  print(f"==========Dataset {opts.data_set.uppper()} NDCGs===========")
+  print(f"==========Dataset {opts.data_set.upper()} NDCGs===========")
   print("".join([f"Func,\t"] +
                 ['NDCG@' + str(k) + ',' + (' ' if k < 10 else '') for k in k_vals]))
   for idx, ndcgs in enumerate(ndcgs_list):
-    print(",\t".join([str(idx + 1)] + ["{:.4f}".format(score) for score in ndcgs]))
-  print(f"==========Dataset {opts.data_set.uppper()} ERRs ===========")
-  print("".join([f"Func,\t"] +
-                ['ERR@' + str(k) + ',' + (' ' if k < 10 else '') for k in k_vals]))
+    print(",\t".join([name_list[idx]] + ["{:.4f}".format(score) for score in ndcgs]))
+  print(f"==========Dataset {opts.data_set.upper()} ERRs ===========")
+  print(",\t".join([f"Func"] +
+                   ['ERR@' + str(k) for k in k_vals]))
   for idx, errs in enumerate(errs_list):
-    print(",\t".join([str(idx + 1)] + ["{:.4f}".format(score) for score in errs]))
+    print(",\t".join([name_list[idx]] + ["{:.4f}".format(score) for score in errs]))
 
 if __name__ == "__main__":
   OPTS = parse_args()
