@@ -1,6 +1,7 @@
 resources/
 .DS_Store
 .vscode
+.idea/
 __pycache__/
 log.txt
 log_back.txt
