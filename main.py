@@ -209,7 +209,7 @@ def main(opts):
 
   if opts.listnet and opts.data_set == 'mq2008':
     print(f"======ListNet MQ2008 metrics average of [{opts.repeat}] runs======")
-    _, listnet_ndcgs, listnet_errs = training.dump_metrics(
+    k_vals, listnet_ndcgs, listnet_errs = training.dump_metrics(
       listnet_mq2008_ks, listnet_mq2008_ndcgs, listnet_mq2008_errs, column_head='Try')
     name_list.append('ListNet')
     ndcgs_list.append(listnet_ndcgs)
@@ -240,15 +240,15 @@ def main(opts):
       errs_list.append(weighted_kl_errs)
 
   print(f"==========Dataset {opts.data_set.upper()} NDCGs===========")
-  print("".join([f"Func,\t"] +
+  print("".join([f"ObjFunc,\t"] +
                 ['NDCG@' + str(k) + ',' + (' ' if k < 10 else '') for k in k_vals]))
   for idx, ndcgs in enumerate(ndcgs_list):
-    print(",\t".join([name_list[idx]] + ["{:.4f}".format(score) for score in ndcgs]))
+    print(",\t".join([name_list[idx].ljust(8)] + ["{:.4f}".format(score) for score in ndcgs]))
   print(f"==========Dataset {opts.data_set.upper()} ERRs ===========")
-  print(",\t".join([f"Func"] +
+  print(",\t".join([f"ObjFunc"] +
                    ['ERR@' + str(k) for k in k_vals]))
   for idx, errs in enumerate(errs_list):
-    print(",\t".join([name_list[idx]] + ["{:.4f}".format(score) for score in errs]))
+    print(",\t".join([name_list[idx].ljust(8)] + ["{:.4f}".format(score) for score in errs]))
 
 if __name__ == "__main__":
   OPTS = parse_args()
