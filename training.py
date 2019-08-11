@@ -187,13 +187,15 @@ class MQ200XTrainer(BaseTrainer):
     weight_decay (float): the weight decay coefficient.
   """
 
-  def __init__(self, use_mq2007=True, feature_count=46, lrate=1e-3, weight_decay=1e-3):
+  def __init__(self, use_mq2007=True, feature_count=46, lrate=1e-3,
+               weight_decay=1e-3, model='simple_one_layer'):
     """Construct ListNet training modules."""
     super(MQ200XTrainer, self).__init__(name="ListNet")
     self.use_mq2007 = use_mq2007
     self.feature_count = feature_count
     self.lrate = lrate
     self.weight_decay = weight_decay
+    self.model = model
 
   def train(self, criterion, epoch_count=200, log_interval=50):
     """Train on MQ2007 dataset with ListNet algorithm"""
@@ -203,7 +205,11 @@ class MQ200XTrainer(BaseTrainer):
     for fold in range(1, 6):
       print(f"Fold {fold}")
 
-      full_model = models.SimpleOneLayerLinear(self.feature_count)
+      full_model = None
+      if self.model == "simple_one_layer":
+        full_model = models.SimpleOneLayerLinear(self.feature_count)
+      else:
+        full_model = models.SimpleThreeLayerLinear(self.feature_count)
       optimizer = optim.Adam(
         full_model.parameters(),
         lr=self.lrate, weight_decay=self.weight_decay)

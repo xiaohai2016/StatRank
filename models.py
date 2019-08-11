@@ -16,7 +16,7 @@ class SimpleOneLayerLinear(nn.Module):
     net: the neural network.
   """
 
-  def __init__(self, in_features, out_features=1, dropout=0.01, activation='sigmoid'):
+  def __init__(self, in_features, out_features=1, activation='sigmoid'):
     """
     Initializes the module.
 
