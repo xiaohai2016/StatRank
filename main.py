@@ -238,8 +238,8 @@ def main(opts):
             use_mq2007=False, model=opts.model)
           lambda_ks, ndcg, err = alpha_lambda_kl_divergence_mq2008_training.train(
             criteria.AlphaDivergenceTopOneAndEntropyRegularizationCriterion(alpha=alpha, lambd=lambd))
-          alpha_lambda_mq2008_ndcgs[lambd].append(ndcg)
-          alpha_lambda_mq2008_errs[lambd].append(err)
+          alpha_lambda_mq2008_ndcgs[alpha][lambd].append(ndcg)
+          alpha_lambda_mq2008_errs[alpha][lambd].append(err)
 
   ndcgs_list = []
   errs_list = []
