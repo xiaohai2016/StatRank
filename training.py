@@ -8,6 +8,7 @@ import torch.optim as optim
 import models
 import metrics
 import data_loader
+import utils
 
 
 def run_epoch(batch_iter, full_model, loss_compute, log_interval=50):
@@ -166,7 +167,7 @@ class BaseTrainer(object):
     for _, batch in enumerate(data_iter):
       labels = batch[1]
       features = batch[2]
-      for lbls, scrs in zip(labels.numpy(), model.forward(features).detach().numpy()):
+      for lbls, scrs in zip(labels.cpu().numpy(), model.forward(features).cpu().detach().numpy()):
         sum_ndcg_at_k = list(map(operator.add, sum_ndcg_at_k,
                                  [metrics.ndcg_score(lbls, scrs, k=k) for k in k_vals]))
         sum_err_at_k = list(map(operator.add, sum_err_at_k,
@@ -202,23 +203,24 @@ class MQ200XTrainer(BaseTrainer):
     k_vals = [1, 3, 5, 10, 20, 50]
     ndcg_ks_list = []
     err_ks_list = []
+    device = utils.get_default_device()
     for fold in range(1, 6):
       print(f"Fold {fold}")
 
       full_model = None
       if self.model == "simple_one_layer":
-        full_model = models.SimpleOneLayerLinear(self.feature_count)
+        full_model = utils.to_device(models.SimpleOneLayerLinear(self.feature_count), device)
       else:
-        full_model = models.SimpleThreeLayerLinear(self.feature_count)
+        full_model = utils.to_device(models.SimpleThreeLayerLinear(self.feature_count), device)
       optimizer = optim.Adam(
         full_model.parameters(),
         lr=self.lrate, weight_decay=self.weight_decay)
 
       path = 'resources/' + ('MQ2007' if self.use_mq2007 else 'MQ2008') + \
             '/Fold' +str(fold) + '/'
-      train_iter = data_loader.get_ms_dataset(path + 'train.txt')
-      valid_iter = data_loader.get_ms_dataset(path + 'vali.txt', shuffle=False)
-      test_iter = data_loader.get_ms_dataset(path + 'test.txt', shuffle=False)
+      train_iter = utils.DeviceDataLoader(data_loader.get_ms_dataset(path + 'train.txt'), device)
+      valid_iter = utils.DeviceDataLoader(data_loader.get_ms_dataset(path + 'vali.txt', shuffle=False), device)
+      test_iter = utils.DeviceDataLoader(data_loader.get_ms_dataset(path + 'test.txt', shuffle=False), device)
       super(MQ200XTrainer, self).__init__(
         name="ListNet",
         train_iter=train_iter,

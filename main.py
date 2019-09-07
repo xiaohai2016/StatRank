@@ -32,6 +32,9 @@ def parse_args():
   parser.add_argument('--alpha-divergence',
                       help='To run training with alpha divergence',
                       action="store_true", default=False)
+  parser.add_argument('--alpha-and-entropy',
+                      help='To run training with alpha divergence along with entropy regularization',
+                      action="store_true", default=False)
   parser.add_argument('--weighted-kl-divergence',
                       help='To run training with weighted KL divergence',
                       action="store_true", default=False)
@@ -45,6 +48,7 @@ def main(opts):
     opts.kl_divergence = True
     opts.alpha_divergence = True
     opts.weighted_kl_divergence = True
+    opts.alpha_and_entropy = True
 
   # Seed for reproducibility
   torch.manual_seed(2019)
@@ -167,6 +171,48 @@ def main(opts):
         lambda_mq2008_ndcgs[lambd].append(ndcg)
         lambda_mq2008_errs[lambd].append(err)
 
+  alpha_lambda_mq2007_ndcgs = {}
+  alpha_lambda_mq2007_errs = {}
+  alpha_lambda_mq2007_alpha_vals = [-0.5, 0.5, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0, 5.0]
+  alpha_lambda_mq2007_lambda_vals = [0.1, 0.7, 1.4, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0]
+  if opts.alpha_and_entropy and opts.data_set == 'mq2007':
+    for alpha in alpha_lambda_mq2007_alpha_vals:
+      alpha_lambda_mq2007_ndcgs[alpha] = {}
+      alpha_lambda_mq2007_errs[alpha] = {}
+      for lambd in alpha_lambda_mq2007_lambda_vals:
+        alpha_lambda_mq2007_ndcgs[alpha][lambd] = []
+        alpha_lambda_mq2007_errs[alpha][lambd] = []
+        lambda_ks = None
+        for idx in range(opts.repeat):
+          print(f"=====Entropy regulated alpha-Divergence ({opts.model}) MQ2007 (alpha={alpha}, lambda={lambd})[{idx}]=======")
+          alpha_lambda_kl_divergence_mq2007_training = training.MQ200XTrainer(
+            use_mq2007=True, model=opts.model)
+          lambda_ks, ndcg, err = alpha_lambda_kl_divergence_mq2007_training.train(
+            criteria.AlphaDivergenceTopOneAndEntropyRegularizationCriterion(alpha=alpha, lambd=lambd))
+          alpha_lambda_mq2007_ndcgs[alpha][lambd].append(ndcg)
+          alpha_lambda_mq2007_errs[alpha][lambd].append(err)
+
+  alpha_lambda_mq2008_ndcgs = {}
+  alpha_lambda_mq2008_errs = {}
+  alpha_lambda_mq2008_alpha_vals = [-0.5, 0.5, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0, 5.0]
+  alpha_lambda_mq2008_lambda_vals = [0.1, 0.7, 1.4, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0]
+  if opts.alpha_and_entropy and opts.data_set == 'mq2008':
+    for alpha in alpha_lambda_mq2008_alpha_vals:
+      alpha_lambda_mq2008_ndcgs[alpha] = {}
+      alpha_lambda_mq2008_errs[alpha] = {}
+      for lambd in alpha_lambda_mq2008_lambda_vals:
+        alpha_lambda_mq2008_ndcgs[alpha][lambd] = []
+        alpha_lambda_mq2008_errs[alpha][lambd] = []
+        lambda_ks = None
+        for idx in range(opts.repeat):
+          print(f"=====Entropy regulated alpha-Divergence ({opts.model}) MQ2008 (alpha={alpha}, lambda={lambd})[{idx}]=======")
+          alpha_lambda_kl_divergence_mq2008_training = training.MQ200XTrainer(
+            use_mq2007=False, model=opts.model)
+          lambda_ks, ndcg, err = alpha_lambda_kl_divergence_mq2008_training.train(
+            criteria.AlphaDivergenceTopOneAndEntropyRegularizationCriterion(alpha=alpha, lambd=lambd))
+          alpha_lambda_mq2008_ndcgs[lambd].append(ndcg)
+          alpha_lambda_mq2008_errs[lambd].append(err)
+
   # print("=====ListMLE ({opts.model}) MQ2007=======")
   # list_mle_mq2007_training = training.MQ200XTrainer(use_mq2007=True, model=opts.model)
   # list_mle_mq2007_training.train(criteria.ListMLECriterion())
@@ -212,6 +258,15 @@ def main(opts):
       name_list.append(f"Wgt{lambd:.1f}")
       ndcgs_list.append(weighted_kl_ndcgs)
       errs_list.append(weighted_kl_errs)
+  if opts.alpha_and_entropy and opts.data_set == 'mq2007':
+    for alpha in alpha_lambda_mq2007_alpha_vals:
+      for lambd in alpha_lambda_mq2007_lambda_vals:
+        print(f"======Entropy regulated[{lambd}] alpha-Divergence[{alpha}] ({opts.model}) MQ2007 [{opts.repeat}] runs======")
+        _, weighted_kl_ndcgs, weighted_kl_errs = training.dump_metrics(
+          lambda_ks, alpha_lambda_mq2007_ndcgs[alpha][lambd], alpha_lambda_mq2007_errs[alpha][lambd], column_head='Try')
+        name_list.append(f"{alpha:.1f}_{lambd:.1f}")
+        ndcgs_list.append(weighted_kl_ndcgs)
+        errs_list.append(weighted_kl_errs)
 
   if opts.listnet and opts.data_set == 'mq2008':
     print(f"======ListNet ({opts.model}) MQ2008 metrics average of [{opts.repeat}] runs======")
@@ -244,6 +299,15 @@ def main(opts):
       name_list.append(f"Wgt{lambd:.1f}")
       ndcgs_list.append(weighted_kl_ndcgs)
       errs_list.append(weighted_kl_errs)
+  if opts.alpha_and_entropy and opts.data_set == 'mq2008':
+    for alpha in alpha_lambda_mq2008_alpha_vals:
+      for lambd in alpha_lambda_mq2008_lambda_vals:
+        print(f"======Entropy regulated[{lambd}] alpha-Divergence[{alpha}] ({opts.model}) MQ2008 [{opts.repeat}] runs======")
+        _, weighted_kl_ndcgs, weighted_kl_errs = training.dump_metrics(
+          lambda_ks, alpha_lambda_mq2008_ndcgs[alpha][lambd], alpha_lambda_mq2008_errs[alpha][lambd], column_head='Try')
+        name_list.append(f"{alpha:.1f}_{lambd:.1f}")
+        ndcgs_list.append(weighted_kl_ndcgs)
+        errs_list.append(weighted_kl_errs)
 
   print(f"==========Dataset ({opts.model}) {opts.data_set.upper()} NDCGs===========")
   print("".join([f"ObjFunc,\t"] +
