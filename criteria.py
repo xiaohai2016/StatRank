@@ -122,6 +122,8 @@ class WeightedKLDivergenceTopOneCriterion(nn.Module):
   """
   Implementation of the KL divergence algorithm for top 1 probabilities with entropy regularization
   Formula: KL(out || label) - lambda * Entropy(out)
+  Note the KL(out || label) contains (-1.0) * Entropy(out). When searching for the hyper parameter
+  lambd, one might want to start from -1.0 instead of from 0.0.
   """
 
   def __init__(self, lambd=0.0):
