@@ -41,6 +41,16 @@ def parse_args():
   parser.add_argument('--weighted-kl-divergence',
                       help='To run training with weighted KL divergence',
                       action="store_true", default=False)
+  parser.add_argument('--alphas',
+                      type=float,
+                      nargs='+',
+                      help='a list of float alpha values for alpha-divergence',
+                      default=None)
+  parser.add_argument('--lambdas',
+                      type=float,
+                      nargs='+',
+                      help='a list of float lambda values for entropy regularization',
+                      default=None)
   return parser.parse_args()
 
 def main(opts):
@@ -135,6 +145,8 @@ def main(opts):
   alpha_mq2007_ndcgs = {}
   alpha_mq2007_errs = {}
   alpha_mq2007_vals = [-0.5, 0.5, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0, 5.0]
+  if opts.alphas:
+    alpha_mq2007_vals = opts.alphas
   if opts.alpha_divergence and opts.data_set == 'mq2007':
     for alpha in alpha_mq2007_vals:
       alpha_mq2007_ndcgs[alpha] = []
@@ -151,6 +163,8 @@ def main(opts):
   alpha_mq2008_ndcgs = {}
   alpha_mq2008_errs = {}
   alpha_mq2008_vals = [-0.5, 0.5, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0, 5.0]
+  if opts.alphas:
+    alpha_mq2008_vals = opts.alphas
   if opts.alpha_divergence and opts.data_set == 'mq2008':
     for alpha in alpha_mq2008_vals:
       alpha_mq2008_ndcgs[alpha] = []
@@ -168,6 +182,8 @@ def main(opts):
   lambda_mq2007_ndcgs = {}
   lambda_mq2007_errs = {}
   lambda_mq2007_vals = [0.1, 0.7, 1.4, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0]
+  if opts.lambdas:
+    lambda_mq2007_vals = opts.lambdas
   if opts.weighted_kl_divergence and opts.data_set == 'mq2007':
     for lambd in lambda_mq2007_vals:
       lambda_mq2007_ndcgs[lambd] = []
@@ -185,6 +201,8 @@ def main(opts):
   lambda_mq2008_ndcgs = {}
   lambda_mq2008_errs = {}
   lambda_mq2008_vals = [0.1, 0.7, 1.4, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0]
+  if opts.lambdas:
+    lambda_mq2008_vals = opts.lambdas
   if opts.weighted_kl_divergence and opts.data_set == 'mq2008':
     for lambd in lambda_mq2008_vals:
       lambda_mq2008_ndcgs[lambd] = []
@@ -202,7 +220,11 @@ def main(opts):
   alpha_lambda_mq2007_ndcgs = {}
   alpha_lambda_mq2007_errs = {}
   alpha_lambda_mq2007_alpha_vals = [-0.5, 0.5, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0, 5.0]
+  if opts.alphas:
+    alpha_lambda_mq2007_alpha_vals = opts.alphas
   alpha_lambda_mq2007_lambda_vals = [0.1, 0.7, 1.4, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0]
+  if opts.lambdas:
+    alpha_lambda_mq2007_lambda_vals = opts.lambdas
   if opts.alpha_and_entropy and opts.data_set == 'mq2007':
     for alpha in alpha_lambda_mq2007_alpha_vals:
       alpha_lambda_mq2007_ndcgs[alpha] = {}
@@ -223,7 +245,11 @@ def main(opts):
   alpha_lambda_mq2008_ndcgs = {}
   alpha_lambda_mq2008_errs = {}
   alpha_lambda_mq2008_alpha_vals = [-0.5, 0.5, 1.3, 1.4, 1.5, 1.6, 1.7, 2.0, 5.0]
+  if opts.alphas:
+    alpha_lambda_mq2008_alpha_vals = opts.alphas
   alpha_lambda_mq2008_lambda_vals = [0.1, 0.7, 1.4, 2.0, 4.0, 5.0, 6.0, 8.0, 10.0, 15.0]
+  if opts.lambdas:
+    alpha_lambda_mq2008_lambda_vals = opts.lambdas
   if opts.alpha_and_entropy and opts.data_set == 'mq2008':
     for alpha in alpha_lambda_mq2008_alpha_vals:
       alpha_lambda_mq2008_ndcgs[alpha] = {}
