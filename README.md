@@ -1,9 +1,9 @@
-# Learning to Rank with $\alpha$-divergence and Entropy Regularization
+# Learning to Rank with Alpha-divergence and Entropy Regularization
 
 ## Steps to reproduce results in the paper
 
 1. Create a folder named *resources* under the root of the cloned code tree;
-2. Download MQ2007 and MQ2008 datasets and decompress them under the #resources$ folder.
+2. Download MQ2007 and MQ2008 datasets and decompress them under the *resources* folder.
 3. Prepare your execution environment with PyTorch 1.1.0 and Scikit.
 4. Run the following commands to generate the test results:
 
